@@ -71,6 +71,19 @@ async def ping(interaction: discord.Interaction):
 
 
 
+# Slash command to check if the bot is online and responding
+@tree.command(name="help", description="A quick help for each command")
+async def ping(interaction: discord.Interaction):
+    message = (
+        "# Welcome to **Vinmonopolet+**!\n\n"
+		"Ｃｏｍｍａｎｄｓ:\n\n"
+		"> **/student**: Posts a paged message sorted buy cheapest raw alcohol from Vinmonopolet\n\n"
+		"> **/largest**: Posts a paged message sorted buy volume.\n\n"
+		"> **/price**: Posts a paged message sorted buy price.\n\n"
+		"> **/help**: Responds with _this_ message.\n"
+    )
+    await interaction.response.send_message(message)
+
 
 # Run the bot
 client.run(TOKEN)
