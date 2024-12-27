@@ -1,0 +1,7 @@
+.env
+
+rawAlcoholPrice.json
+lowPrice.json
+highestVolume.json
+
+__pycache__
