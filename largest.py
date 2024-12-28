@@ -52,8 +52,8 @@ def largestEmbed(page: int):
                 f"**Price**: {product['price']} NOK\n"
                 f"**Raw Alcohol Price**: {product['rawAlcoholPrice']} NOK/L\n"
                 f"**Volume**: {product['volume']}cl\n"
-                f"{image_link}"
-                f"{'\n**Unavailable**' if not product['buyable'] else ''}" 
+                f"{image_link}\n"
+                f"{'**Unavailable**' if not product['buyable'] else ''}" 
             ),                
             inline=True  # Use inline=True to display in rows
         )

@@ -36,7 +36,7 @@ print(f"Total pages to load: {total_pages}")
 for page in range(total_pages):
     data = fetch_data(page)
     products = data["productSearchResult"]["products"]
-    
+
     for product in products:
         totalItems += 1
 
