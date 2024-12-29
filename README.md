@@ -1,9 +1,18 @@
 # VinmonopoletDiscord
 
+**This project is heavily inspired by spritjakt.no**
+
 This is a Discord app to query Vinmonopolets products.
 
 The app can post paged embeds for cheapest products, largest buy volume and lowest price per raw alcohol.
 
+### Commads
+
+```/student``` Returns products from Vinmonopolet, 10 at a time, sorted by the raw alcohol price.
+
+```/price``` Returns products from Vinmonopolet, 10 at a time, sorted by the lowest price.
+
+```/largest``` Returns products from Vinmonopolet, 10 at a time, sorted by the product's volume.
 
 
 ### Exsisting running bot to use:
