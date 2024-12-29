@@ -1,5 +1,6 @@
 import requests
 import json
+import os
 
 # Base API URL
 BASE_URL = "https://www.vinmonopolet.no/vmpws/v2/vmp/search"
@@ -13,6 +14,13 @@ params = {
     "q": ":price-asc"
 }
 
+# Global variables for total items and pages
+totalItems = 0
+total_pages_price = 0
+total_pages_raw_alcohol = 0
+total_pages_volume = 0
+firstOpened = True
+
 # Function to fetch data from the API
 def fetch_data(page):
     params["currentPage"] = page
@@ -22,80 +30,109 @@ def fetch_data(page):
     else:
         errorPages.append(page)
 
-# List to store the extracted data
-response = []
+# Check if the necessary files exist
+files_exist = all(os.path.exists(file) for file in ["rawAlcoholPrice.json", "lowPrice.json", "highestVolume.json"])
 
-# Initial API call to determine the total number of pages
-initial_data = fetch_data(0)
-total_pages = initial_data["productSearchResult"]["pagination"]["totalPages"]
-totalItems = 0
+if files_exist and firstOpened:
+    firstOpened = False
+else:
+    firstOpened = False
+    totalItems = 0
+    print("Fetching data from the API...")
 
-print(f"Total pages to load: {total_pages}")
+    # Initial API call to determine the total number of pages
+    initial_data = fetch_data(0)
+    total_pages = initial_data["productSearchResult"]["pagination"]["totalPages"]
 
-# Loop through all pages
-for page in range(total_pages):
-    data = fetch_data(page)
-    products = data["productSearchResult"]["products"]
+    response = []
 
-    for product in products:
-        totalItems += 1
+    # Loop through all pages
+    for page in range(total_pages):
+        data = fetch_data(page)
+        products = data["productSearchResult"]["products"]
 
-        name = product.get("name", None)
-        url = product.get("url", None)
-        alcohol = product.get("alcohol", {}).get("value", None)
-        buyable = product.get("buyable", None)
-        price = product.get("price", {}).get("value", None)
-        volume = product.get("volume", {}).get("value", None)
-        imageUrls = product.get("images", [])
-        imageUrl = imageUrls[0].get("url", None) if imageUrls else None
-        rawAlcoholPrice = (1 / ( volume / 100 ) * ( 100 / alcohol ) * price) if alcohol and volume and price else None
+        for product in products:
+            totalItems += 1
+            print(totalItems)
 
-        response.append({
-            "name": name,
-            "alcohol": alcohol,
-            "price": price,
-            "volume": volume,
-            "rawAlcoholPrice": int(rawAlcoholPrice) if rawAlcoholPrice is not None else None,
-            "buyable": buyable,
-            "image": imageUrl,
-            "sufix": url
-        })
+            name = product.get("name", None)
+            url = product.get("url", None)
+            alcohol = product.get("alcohol", {}).get("value", None)
+            buyable = product.get("buyable", None)
+            price = product.get("price", {}).get("value", None)
+            volume = product.get("volume", {}).get("value", None)
+            imageUrls = product.get("images", [])
+            imageUrl = imageUrls[0].get("url", None) if imageUrls else None
+            rawAlcoholPrice = (1 / (volume / 100) * (100 / alcohol) * price) if alcohol and volume and price else None
+
+            response.append({
+                "name": name,
+                "alcohol": alcohol,
+                "price": price,
+                "volume": volume,
+                "rawAlcoholPrice": int(rawAlcoholPrice) if rawAlcoholPrice is not None else None,
+                "buyable": buyable,
+                "image": imageUrl,
+                "sufix": url
+            })
+
+    while len(errorPages) > 0:
+        fetch_data(errorPages[0])
+        del errorPages[0]
+
+    print(f"Total pages calculated from API data: {total_pages}")
+
+    # Sort and save data into JSON files
+    cheapPrice = sorted(
+        (item for item in response if item['price'] is not None),
+        key=lambda x: x['price'],
+        reverse=False
+    )
+
+    with open("lowPrice.json", "w", encoding="utf-8") as f:
+        json.dump(cheapPrice, f, ensure_ascii=False, indent=4)
+
+    cheapestRawAlcohol = sorted(
+        (item for item in response if item['rawAlcoholPrice'] is not None),
+        key=lambda x: x['rawAlcoholPrice'],
+        reverse=False
+    )
+
+    with open("rawAlcoholPrice.json", "w", encoding="utf-8") as f:
+        json.dump(cheapestRawAlcohol, f, ensure_ascii=False, indent=4)
+
+    highVolume = sorted(
+        (item for item in response if item['volume'] is not None),
+        key=lambda x: x['volume'],
+        reverse=True
+    )
 
 
-while len(errorPages) > 0:
-    fetch_data(errorPages[0])
-    del errorPages[0]
+    with open("highestVolume.json", "w", encoding="utf-8") as f:
+        json.dump(highVolume, f, ensure_ascii=False, indent=4)
 
 
-cheapPrice = sorted(
-    (item for item in response if item['price'] is not None),
-    key=lambda x: x['price'],
-    reverse=False
-)
+# Loads new page lenght
+with open("lowPrice.json", "r", encoding="utf-8") as f:
+    loaded_data = json.load(f)
+    totalItems = len(loaded_data)
+    full_pages = totalItems // 10
+    rest_items = totalItems % 10
+    total_pages = full_pages + (1 if rest_items > 0 else 0)
 
-# Save the extracted data to a JSON file
-with open("lowPrice.json", "w", encoding="utf-8") as f:
-    json.dump(cheapPrice, f, ensure_ascii=False, indent=4)
+    
+with open("rawAlcoholPrice.json", "r", encoding="utf-8") as f:
+    loaded_data = json.load(f)
+    totalItems = len(loaded_data)
+    full_pages = totalItems // 10
+    rest_items = totalItems % 10
+    total_pages_raw_alcohol = full_pages + (1 if rest_items > 0 else 0)
+    
+with open("rawAlcoholPrice.json", "r", encoding="utf-8") as f:
+    loaded_data = json.load(f)
+    totalItems = len(loaded_data)
+    full_pages = totalItems // 10
+    rest_items = totalItems % 10
+    total_pages_volume = full_pages + (1 if rest_items > 0 else 0)
 
-
-# Sort the data by rawAlcoholPrice, filtering out items with None value
-cheapestRawAlcohol = sorted(
-    (item for item in response if item['rawAlcoholPrice'] is not None),
-    key=lambda x: x['rawAlcoholPrice'],
-    reverse=False
-)
-
-# Save the sorted data to a JSON file
-with open("rawAlcoholPrice.json", "w", encoding="utf-8") as f:
-    json.dump(cheapestRawAlcohol, f, ensure_ascii=False, indent=4)
-
-highVolume = sorted(
-    (item for item in response if item['volume'] is not None),
-    key=lambda x: x['volume'],
-    reverse=True
-)
-
-with open("highestVolume.json", "w", encoding="utf-8") as f:
-    json.dump(highVolume, f, ensure_ascii=False, indent=4)
-
-print("Data extraction complete. Saved to response.json.")
+print("Data extraction complete.")

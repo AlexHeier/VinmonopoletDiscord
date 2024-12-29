@@ -9,8 +9,9 @@ class LargestView(discord.ui.View):
 
     @discord.ui.button(label="previous", style=discord.ButtonStyle.primary)
     async def previous(self, interaction: discord.Interaction, button: discord.ui.Button):
+       
         if self.page <= 1:
-            self.page = (api.totalItems + 10 - 1) // 10
+            self.page = api.total_pages_volume
         else: 
             self.page -= 1
         embed = largestEmbed(self.page)
@@ -19,8 +20,8 @@ class LargestView(discord.ui.View):
 
     @discord.ui.button(label="next", style=discord.ButtonStyle.primary)
     async def next(self, interaction: discord.Interaction, button: discord.ui.Button):
-        total_pages = (api.totalItems + 10 - 1) // 10
-        if self.page >= total_pages:
+    
+        if self.page >= api.total_pages_volume:
             self.page = 1
         else:
             self.page += 1 
@@ -36,7 +37,7 @@ def largestEmbed(page: int):
     )
 
     # Fetch the products for the current page
-    page_items = products[((page - 1) * 10 ) // 10 : min(((page - 1) * 10 ) // 10 + 10, len(products))]
+    page_items = products[(page - 1) * 10: min((page) * 10, len(products))]
     
     for i, product in enumerate(page_items):
         # Link the product name in the field value
@@ -45,7 +46,7 @@ def largestEmbed(page: int):
             
         # Add a field with the hyperlink in the value (not the name)
         embed.add_field(
-            name="\u200b",
+            name=f"Number: {((page -1) * 10) + i + 1}",
             value=(
                 f"**Product**: {linked_name}\n"
                 f"**Alcohol**: {product['alcohol']}%\n"
